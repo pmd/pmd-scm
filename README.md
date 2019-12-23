@@ -1,6 +1,8 @@
 # Source code minimizer (pmd-scm)
 
-based on [PMD](https://pmd.github.io).
+[![Build Status](https://travis-ci.com/pmd/pmd-scm.svg?branch=master)](https://travis-ci.com/pmd/pmd-scm)
+
+This is a tool based on [PMD](https://pmd.github.io).
 
 See [#2103 [core] Feature request: compiler-crashing test case minimization](https://github.com/pmd/pmd/issues/2103)
 and [#2142 [core] Initial implementation of Source Code Minimizer](https://github.com/pmd/pmd/pull/2142)
