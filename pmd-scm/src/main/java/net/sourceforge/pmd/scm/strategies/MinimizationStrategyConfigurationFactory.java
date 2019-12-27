@@ -4,12 +4,14 @@
 
 package net.sourceforge.pmd.scm.strategies;
 
+import net.sourceforge.pmd.scm.MinimizerLanguage;
+
 /**
  * Factory for some specific implementation of {@link MinimizationStrategyConfiguration}.
  *
  * Such factories are expected to be registered in the SCM language support implementation entry points.
  *
- * @see net.sourceforge.pmd.scm.Language
+ * @see MinimizerLanguage
  */
 public interface MinimizationStrategyConfigurationFactory {
     /**

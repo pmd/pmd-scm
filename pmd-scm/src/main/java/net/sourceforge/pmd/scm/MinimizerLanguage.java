@@ -13,7 +13,7 @@ import net.sourceforge.pmd.scm.strategies.MinimizationStrategyConfiguration;
 /**
  * An entry point for the specific language module for Source Code Minimizer.
  */
-public interface Language {
+public interface MinimizerLanguage {
     /**
      * Get the terse language name for use on the command line.
      */

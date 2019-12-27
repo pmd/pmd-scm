@@ -13,11 +13,13 @@ import java.util.List;
 import org.junit.Test;
 
 import net.sourceforge.pmd.lang.ast.Node;
+import net.sourceforge.pmd.lang.java.JavaLanguageModule;
 import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceBodyDeclaration;
 
 public class JavaASTCutterTest extends AbstractASTCutterTest {
     public JavaASTCutterTest() throws IOException {
-        super(new JavaMinimizerModule().getDefaultParser(), Charset.defaultCharset());
+        super(new MinimizerLanguageModuleAdapter(new JavaLanguageModule()).getDefaultParser(),
+                Charset.defaultCharset());
     }
 
     @Test

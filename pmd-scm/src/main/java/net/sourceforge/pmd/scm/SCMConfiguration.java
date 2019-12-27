@@ -10,6 +10,7 @@ import net.sourceforge.pmd.AbstractConfiguration;
 import net.sourceforge.pmd.scm.invariants.InvariantConfiguration;
 import net.sourceforge.pmd.scm.strategies.MinimizationStrategyConfiguration;
 
+import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -33,8 +34,8 @@ public class SCMConfiguration extends AbstractConfiguration {
     private Charset sourceCharset = Charset.defaultCharset();
 
     @Parameter(names = "--language", description = "Source code language",
-            required = true, converter = LanguageConverter.class)
-    private Language language;
+            required = true, converter = LanguageParameterHandler.class, validateWith = LanguageParameterHandler.class)
+    private MinimizerLanguage language;
 
     @Parameter(names = "--language-version", description = "Specific language version")
     private String languageVersion;
@@ -62,7 +63,7 @@ public class SCMConfiguration extends AbstractConfiguration {
         return sourceCharset;
     }
 
-    Language getLanguageHandler() {
+    MinimizerLanguage getLanguageHandler() {
         return language;
     }
 
@@ -76,13 +77,6 @@ public class SCMConfiguration extends AbstractConfiguration {
 
     String getErrorString() {
         return errorString;
-    }
-
-    private static class LanguageConverter implements IStringConverter<Language> {
-        @Override
-        public Language convert(String value) {
-            return MinimizerLanguageFactory.INSTANCE.getLanguage(value);
-        }
     }
 
     /**
@@ -122,7 +116,7 @@ public class SCMConfiguration extends AbstractConfiguration {
     }
 
     String getHelpString() {
-        Language parsedLanguage = language;
+        MinimizerLanguage parsedLanguage = language;
         language = null;
         StringBuilder sb = new StringBuilder();
 
@@ -180,6 +174,20 @@ public class SCMConfiguration extends AbstractConfiguration {
         @Override
         public Charset convert(String value) {
             return Charset.forName(value);
+        }
+    }
+
+    public static final class LanguageParameterHandler implements IStringConverter<MinimizerLanguage>, IParameterValidator {
+        @Override
+        public void validate(String name, String value) throws ParameterException {
+            if (convert(value) == null) {
+                throw new ParameterException("Unknown language: " + value);
+            }
+        }
+
+        @Override
+        public MinimizerLanguage convert(String value) {
+            return MinimizerLanguageFactory.INSTANCE.getLanguage(value);
         }
     }
 }
