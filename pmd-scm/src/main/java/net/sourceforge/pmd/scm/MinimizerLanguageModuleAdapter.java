@@ -25,12 +25,13 @@ import net.sourceforge.pmd.scm.strategies.MinimizationStrategyConfiguration;
 import net.sourceforge.pmd.scm.strategies.MinimizationStrategyConfigurationFactory;
 import net.sourceforge.pmd.scm.strategies.XPathStrategy;
 
-public abstract class BaseMinimizerLanguageModule implements Language, NodeInformationProvider {
+
+public class MinimizerLanguageModuleAdapter implements MinimizerLanguage, NodeInformationProvider {
     private final net.sourceforge.pmd.lang.Language pmdLanguage;
     private final Map<String, MinimizationStrategyConfigurationFactory> strategies = new LinkedHashMap<>();
     private final Map<String, InvariantConfigurationFactory> invariantCheckers = new LinkedHashMap<>();
 
-    BaseMinimizerLanguageModule(net.sourceforge.pmd.lang.Language pmdLanguage) {
+    MinimizerLanguageModuleAdapter(net.sourceforge.pmd.lang.Language pmdLanguage) {
         this.pmdLanguage = pmdLanguage;
         addInvariant(DummyInvariant.FACTORY);
         addInvariant(ExitCodeInvariant.FACTORY);

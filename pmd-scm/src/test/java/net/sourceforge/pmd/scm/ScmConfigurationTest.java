@@ -105,6 +105,40 @@ public class ScmConfigurationTest {
     }
 
     @Test
+    public void testUnknownLanguage() {
+        SCMConfiguration configuration = new SCMConfiguration();
+        String[] args = { "--language", "nonexistent" };
+        boolean configurationParsed = configuration.parse(args);
+        Assert.assertFalse(configurationParsed);
+        Assert.assertEquals("Unknown language: nonexistent", configuration.getErrorString());
+    }
+
+    @Test
+    public void testUnknownStrategy() {
+        SCMConfiguration configuration = new SCMConfiguration();
+        String[] args = {
+                "--language", "java", "--strategy", "nonexistent", "--invariant", "dummy",
+                "--input-file", "a", "--output-file", "b",
+        };
+        boolean configurationParsed = configuration.parse(args);
+        Assert.assertFalse(configurationParsed);
+        Assert.assertEquals("Unknown strategy: nonexistent", configuration.getErrorString());
+    }
+
+    @Test
+    public void testUnknownInvariant() {
+        SCMConfiguration configuration = new SCMConfiguration();
+        String[] args = {
+                "--language", "java", "--invariant", "nonexistent",
+                "--strategy", "xpath", "--xpath-expression", "",
+                "--input-file", "a", "--output-file", "b",
+        };
+        boolean configurationParsed = configuration.parse(args);
+        Assert.assertFalse(configurationParsed);
+        Assert.assertEquals("Unknown invariant: nonexistent", configuration.getErrorString());
+    }
+
+    @Test
     public void testDefaultUsageText() {
         SCMConfiguration configuration = new SCMConfiguration();
         String[] args = { "--language", "dummy" };
@@ -129,7 +163,6 @@ public class ScmConfigurationTest {
         Assert.assertNull(configuration.getErrorString());
         Assert.assertTrue(success);
 
-        Assert.assertTrue(configuration.getLanguageHandler() instanceof DummyLanguage);
         Assert.assertTrue(configuration.getStrategyConfig() instanceof XPathStrategy.Configuration);
         Assert.assertTrue(configuration.getInvariantCheckerConfig() instanceof PrintedMessageInvariant.Configuration);
 

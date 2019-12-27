@@ -4,12 +4,14 @@
 
 package net.sourceforge.pmd.scm.invariants;
 
+import net.sourceforge.pmd.scm.MinimizerLanguage;
+
 /**
  * Factory for some specific implementation of {@link InvariantConfiguration}.
  *
  * Such factories are expected to be registered in the SCM language support implementation entry points.
  *
- * @see net.sourceforge.pmd.scm.Language
+ * @see MinimizerLanguage
  */
 public interface InvariantConfigurationFactory {
     /**

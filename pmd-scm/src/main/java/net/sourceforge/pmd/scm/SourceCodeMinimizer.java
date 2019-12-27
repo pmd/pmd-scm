@@ -26,7 +26,7 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
 
     private static final class ExitException extends Exception { }
 
-    private final Language language;
+    private final MinimizerLanguage language;
     private final Invariant invariant;
     private final MinimizationStrategy strategy;
     private final Parser parser;
