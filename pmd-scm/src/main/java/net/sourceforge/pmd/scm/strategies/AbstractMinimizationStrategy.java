@@ -4,8 +4,6 @@
 
 package net.sourceforge.pmd.scm.strategies;
 
-import net.sourceforge.pmd.lang.ast.Node;
-
 /**
  * Abstract minimization strategy implementation.
  */
@@ -33,7 +31,7 @@ public abstract class AbstractMinimizationStrategy implements MinimizationStrate
     }
 
     @Override
-    public void initialize(MinimizerOperations ops, Node rootNode) {
+    public void initialize(MinimizerOperations ops) {
         this.ops = ops;
     }
 }

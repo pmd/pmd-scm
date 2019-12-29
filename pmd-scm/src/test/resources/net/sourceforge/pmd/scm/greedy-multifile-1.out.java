@@ -1,0 +1,4 @@
+class TestResource {
+    int func() {
+    }
+}

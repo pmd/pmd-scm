@@ -5,6 +5,10 @@
 package net.sourceforge.pmd.scm;
 
 import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import net.sourceforge.pmd.AbstractConfiguration;
 import net.sourceforge.pmd.scm.invariants.InvariantConfiguration;
@@ -12,6 +16,7 @@ import net.sourceforge.pmd.scm.strategies.MinimizationStrategyConfiguration;
 
 import com.beust.jcommander.IParameterValidator;
 import com.beust.jcommander.IStringConverter;
+import com.beust.jcommander.IVariableArity;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
@@ -19,15 +24,27 @@ import com.beust.jcommander.ParameterException;
 /**
  * Configuration object for Source Code Minimizer
  */
-public class SCMConfiguration extends AbstractConfiguration {
+public class SCMConfiguration extends AbstractConfiguration implements IVariableArity {
+    public static class FileMapping {
+        public final Path input;
+        public final Path output;
+
+        FileMapping(Path input, Path output) {
+            this.input = input;
+            this.output = output;
+        }
+    }
+
     private MinimizationStrategyConfiguration strategyConfiguration;
     private InvariantConfiguration invariantConfiguration;
 
-    @Parameter(names = "--input-file", description = "Original file that should be minimized", required = true)
-    private String inputFileName;
+    @Parameter(names = "--input-file", description = "Original file that should be minimized, or list of such files",
+            required = true, variableArity = true)
+    public List<String> inputFileNames = new ArrayList<>();
 
-    @Parameter(names = "--output-file", description = "Output file (used as a scratch file, too)", required = true)
-    private String outputFileName;
+    @Parameter(names = "--output-file", description = "Output file (used as a scratch file, too), or list of such files",
+            required = true, variableArity = true)
+    public List<String> outputFileNames = new ArrayList<>();
 
     @Parameter(names = "--charset", description = "Charset of the source file to be minimized",
             converter = CharsetConverter.class)
@@ -51,12 +68,10 @@ public class SCMConfiguration extends AbstractConfiguration {
 
     private String errorString;
 
-    public String getInputFileName() {
-        return inputFileName;
-    }
+    private List<FileMapping> fileMappings;
 
-    public String getOutputFileName() {
-        return outputFileName;
+    public List<FileMapping> getFileMappings() {
+        return fileMappings;
     }
 
     public Charset getSourceCharset() {
@@ -87,6 +102,18 @@ public class SCMConfiguration extends AbstractConfiguration {
         jcommander.setProgramName(SCM.PROGRAM_NAME);
         jcommander.setAcceptUnknownOptions(true);
         jcommander.parse(args);
+
+        if (inputFileNames.size() != outputFileNames.size()) {
+            throw new ParameterException("Input file count is " + inputFileNames.size() +
+                    ", output file count is " + outputFileNames.size() + ", should be equal");
+        }
+        fileMappings = new ArrayList<>();
+        for (int i = 0; i < inputFileNames.size(); ++i) {
+            fileMappings.add(new FileMapping(
+                    Paths.get(inputFileNames.get(i)),
+                    Paths.get(outputFileNames.get(i)))
+            );
+        }
 
         strategyConfiguration = language.createStrategyConfiguration(strategy);
         invariantConfiguration = language.createInvariantConfiguration(invariantChecker);
@@ -189,5 +216,15 @@ public class SCMConfiguration extends AbstractConfiguration {
         public MinimizerLanguage convert(String value) {
             return MinimizerLanguageFactory.INSTANCE.getLanguage(value);
         }
+    }
+
+    @Override
+    public int processVariableArity(String optionName, String[] options) {
+        int arity = 0;
+        // Stop at the first option starting with a '-' sign
+        while (arity < options.length && !options[arity].startsWith("-")) {
+            arity += 1;
+        }
+        return arity;
     }
 }

@@ -4,6 +4,8 @@
 
 package net.sourceforge.pmd.scm.strategies;
 
+import java.util.List;
+
 import net.sourceforge.pmd.lang.ast.Node;
 
 /**
@@ -12,13 +14,11 @@ import net.sourceforge.pmd.lang.ast.Node;
 public interface MinimizationStrategy {
     /**
      * Called once before starting the minimization.
-     *
-     * @param rootNode Root node of the original source file
      */
-    void initialize(MinimizerOperations ops, Node rootNode);
+    void initialize(MinimizerOperations ops);
 
     /**
      * Performs single minimization pass.
      */
-    void performSinglePass(Node currentRoot) throws Exception;
+    void performSinglePass(List<Node> roots) throws Exception;
 }

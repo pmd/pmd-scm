@@ -4,6 +4,7 @@
 
 package net.sourceforge.pmd.scm.strategies;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -49,8 +50,11 @@ public class XPathStrategy extends AbstractMinimizationStrategy {
     }
 
     @Override
-    public void performSinglePass(Node currentRoot) throws Exception {
-        List<Node> nodesToRemove = query.evaluate(currentRoot, null);
+    public void performSinglePass(List<Node> roots) throws Exception {
+        List<Node> nodesToRemove = new ArrayList<>();
+        for (Node root : roots) {
+            nodesToRemove.addAll(query.evaluate(root, null));
+        }
         ops.forceRemoveNodesAndExit(nodesToRemove);
     }
 }

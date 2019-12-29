@@ -4,12 +4,7 @@
 
 package net.sourceforge.pmd.scm.invariants;
 
-import java.io.BufferedReader;
-
 import org.apache.commons.lang3.SystemUtils;
-
-import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.ast.ParseException;
 
 import com.beust.jcommander.Parameter;
 
@@ -53,7 +48,7 @@ public abstract class AbstractExternalProcessInvariant implements Invariant {
     }
 
     @Override
-    public void initialize(InvariantOperations ops, Node rootNode) {
+    public void initialize(InvariantOperations ops) {
         this.ops = ops;
     }
 
@@ -61,16 +56,9 @@ public abstract class AbstractExternalProcessInvariant implements Invariant {
 
     @Override
     public boolean checkIsSatisfied() throws Exception {
-        try (BufferedReader reader = ops.getScratchReader()) {
-            try {
-                Node root = ops.getCurrentParser().parse("", reader);
-                if (root == null) {
-                    return false;
-                }
-            } catch (ParseException ex) {
-                return false;
-            }
-        }
-        return testSatisfied(new ProcessBuilder().command(commandArgs));
+        // Order is significant!
+        // Syntactical check is generally much faster that spawning compiler process!
+        return ops.allInputsAreParseable() &&
+                testSatisfied(new ProcessBuilder().command(commandArgs));
     }
 }
