@@ -36,9 +36,4 @@ public interface MinimizerOperations {
      * Removes the specified nodes (even if producing source code that cannot be re-parsed), then exits.
      */
     void forceRemoveNodesAndExit(Collection<Node> nodesToRemove) throws Exception;
-
-    /**
-     * Get the parsed root node of the <b>input</b> file specified on the command line.
-     */
-    Node getOriginalRoot();
 }

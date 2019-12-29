@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,6 +23,7 @@ import net.sourceforge.pmd.document.DocumentFile;
 import net.sourceforge.pmd.document.DocumentOperationsApplierForNonOverlappingRegions;
 import net.sourceforge.pmd.lang.Parser;
 import net.sourceforge.pmd.lang.ast.Node;
+import net.sourceforge.pmd.lang.ast.ParseException;
 
 /**
  * A class for generating source files (as a plain text) from the <b>subset</b> of the given AST.
@@ -65,6 +67,10 @@ public class ASTCutter implements AutoCloseable {
 
     public Path getScratchFile() {
         return scratchFile;
+    }
+
+    public Set<Node> getAllNodes() {
+        return Collections.unmodifiableSet(currentDocumentNodes);
     }
 
     /**
@@ -207,21 +213,80 @@ public class ASTCutter implements AutoCloseable {
     }
 
     /**
-     * Accepts the last written file state as a new intermediate state.
+     * Checks that current scratch file contents can be parsed by the current parser.
      *
-     * Please note, this does not anyhow relate to committing files under version control, if any.
-     *
-     * @return The root node of the "new current" source state
+     * It is generally a waste of time to spawn the entire compiler if even SCM cannot
+     * parse current input. Especially, because we need to load it anyway if the invariant
+     * would hold AND we want to proceed...
      */
-    public Node commitChange() throws IOException {
-        currentRoot = load(scratchFile);
-        // if not thrown, then ...
+    public boolean isScratchFileParseable() throws IOException {
+        try {
+            // result is unused
+            load(scratchFile);
+        } catch (ParseException ex) {
+            return false;
+        }
+        return true;
+    }
+
+    // Root node prepared to be committed
+    private Node preparedRoot;
+
+    private void parseChanged() throws IOException {
+        preparedRoot = load(scratchFile);
+    }
+
+    private Node commit() throws IOException {
+        currentRoot = preparedRoot;
         Files.copy(scratchFile, lastCommitted, StandardCopyOption.REPLACE_EXISTING);
 
         currentDocumentNodes.clear();
         collectAllNodes(currentRoot);
 
         return currentRoot;
+    }
+
+    // Should be called after parseChanged() even if committed OK
+    private void forgetParsed() {
+        preparedRoot = null;
+    }
+
+    /**
+     * Atomically commits changes to multiple files in the meaning
+     * of the commitChange() method.
+     */
+    public static List<Node> commitAll(List<ASTCutter> cutters) throws IOException {
+        List<Node> result = new ArrayList<>();
+        try {
+            for (ASTCutter cutter : cutters) {
+                cutter.parseChanged();
+            }
+            // Either thrown, or everything was parsed OK
+            for (ASTCutter cutter : cutters) {
+                result.add(cutter.commit());
+            }
+            return result;
+        } catch (ParseException ex) {
+            return null;
+        } finally {
+            for (ASTCutter cutter : cutters) {
+                cutter.forgetParsed();
+            }
+        }
+    }
+
+    /**
+     * Accepts the last written file state as a new intermediate state.
+     *
+     * Please note, this does not anyhow relate to committing files under version control, if any.
+     *
+     * @return The root node of the "new current" source state or <code>null</code> if cannot parse
+     */
+    public Node commitChange() throws IOException {
+        List<ASTCutter> args = new ArrayList<>();
+        args.add(this);
+        List<Node> result = commitAll(args);
+        return result == null ? null : result.get(0);
     }
 
     /**

@@ -20,7 +20,8 @@ public class ScmConfigurationTest {
         + "    --help\n"
         + "      Display help\n"
         + "  * --input-file\n"
-        + "      Original file that should be minimized\n"
+        + "      Original file that should be minimized, or list of such files\n"
+        + "      Default: []\n"
         + "    --invariant\n"
         + "      Invariant to preserve during minimization\n"
         + "      Default: dummy\n"
@@ -29,7 +30,8 @@ public class ScmConfigurationTest {
         + "    --language-version\n"
         + "      Specific language version\n"
         + "  * --output-file\n"
-        + "      Output file (used as a scratch file, too)\n"
+        + "      Output file (used as a scratch file, too), or list of such files\n"
+        + "      Default: []\n"
         + "  * --strategy\n"
         + "      Minimization strategy\n"
         + "Available languages: " + MinimizerLanguageFactory.INSTANCE.getSupportedLanguagesWithVersions() + "\n";
@@ -43,7 +45,8 @@ public class ScmConfigurationTest {
         + "    --help\n"
         + "      Display help\n"
         + "  * --input-file\n"
-        + "      Original file that should be minimized\n"
+        + "      Original file that should be minimized, or list of such files\n"
+        + "      Default: []\n"
         + "    --invariant\n"
         + "      Invariant to preserve during minimization\n"
         + "      Default: dummy\n"
@@ -52,7 +55,8 @@ public class ScmConfigurationTest {
         + "    --language-version\n"
         + "      Specific language version\n"
         + "  * --output-file\n"
-        + "      Output file (used as a scratch file, too)\n"
+        + "      Output file (used as a scratch file, too), or list of such files\n"
+        + "      Default: []\n"
         + "  * --strategy\n"
         + "      Minimization strategy\n"
         + "Available languages: " + MinimizerLanguageFactory.INSTANCE.getSupportedLanguagesWithVersions() + "\n"
@@ -98,9 +102,7 @@ public class ScmConfigurationTest {
         String[] args = { };
         boolean configurationParsed = configuration.parse(args);
         Assert.assertFalse(configurationParsed);
-        Assert.assertEquals(
-                "The following options are required: [--language], [--output-file], [--input-file], [--strategy]",
-                configuration.getErrorString());
+        Assert.assertTrue(configuration.getErrorString().startsWith("The following options are required:"));
         Assert.assertEquals(DEFAULT_GENERIC_USAGE_TEXT, configuration.getHelpString());
     }
 
@@ -144,9 +146,7 @@ public class ScmConfigurationTest {
         String[] args = { "--language", "dummy" };
         boolean configurationParsed = configuration.parse(args);
         Assert.assertFalse(configurationParsed);
-        Assert.assertEquals(
-                "The following options are required: [--output-file], [--input-file], [--strategy]",
-                configuration.getErrorString());
+        Assert.assertTrue(configuration.getErrorString().startsWith("The following options are required:"));
         Assert.assertEquals(DEFAULT_DUMMY_USAGE_TEXT, configuration.getHelpString());
     }
 

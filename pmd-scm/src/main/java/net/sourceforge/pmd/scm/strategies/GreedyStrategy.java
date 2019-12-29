@@ -7,6 +7,7 @@ package net.sourceforge.pmd.scm.strategies;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -130,23 +131,31 @@ public class GreedyStrategy extends AbstractMinimizationStrategy {
         }
     }
 
+    private void processSingleRoot(Node currentRoot) throws Exception {
+        // cannot remove root
+        for (int i = 0; i < currentRoot.jjtGetNumChildren(); ++i) {
+            findNodeToRemove(currentRoot.jjtGetChild(i));
+        }
+    }
+
     @Override
-    public void performSinglePass(Node currentRoot) throws Exception {
+    public void performSinglePass(List<Node> roots) throws Exception {
         positionCountdown = previousPosition;
         previousPosition = 0;
         directlyDependingNodes.clear();
         transitivelyDependingNodes.clear();
-        fetchDirectDependentsFromSubtree(currentRoot);
-        // cannot remove root
-        for (int i = 0; i < currentRoot.jjtGetNumChildren(); ++i) {
-            findNodeToRemove(currentRoot.jjtGetChild(i));
+        for (Node root : roots) {
+            fetchDirectDependentsFromSubtree(root);
+        }
+        for (Node currentRoot : roots) {
+            processSingleRoot(currentRoot);
         }
         // If we are here, then fast restart logic failed.
         // Trying to restart from scratch...
         previousPosition = 0;
         positionCountdown = 0;
-        for (int i = 0; i < currentRoot.jjtGetNumChildren(); ++i) {
-            findNodeToRemove(currentRoot.jjtGetChild(i));
+        for (Node currentRoot : roots) {
+            processSingleRoot(currentRoot);
         }
     }
 }

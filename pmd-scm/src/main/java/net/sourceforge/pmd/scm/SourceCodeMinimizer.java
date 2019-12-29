@@ -4,18 +4,18 @@
 
 package net.sourceforge.pmd.scm;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import net.sourceforge.pmd.lang.Parser;
 import net.sourceforge.pmd.lang.ast.Node;
-import net.sourceforge.pmd.lang.ast.ParseException;
 import net.sourceforge.pmd.scm.invariants.Invariant;
 import net.sourceforge.pmd.scm.invariants.InvariantOperations;
 import net.sourceforge.pmd.scm.strategies.MinimizationStrategy;
@@ -29,36 +29,33 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
     private final MinimizerLanguage language;
     private final Invariant invariant;
     private final MinimizationStrategy strategy;
-    private final Parser parser;
-    private final Charset sourceCharset;
-    private final ASTCutter cutter;
-    private final Node originalRootNode;
-
-    private Node currentRootNode;
+    private final List<ASTCutter> cutters;
+    private List<Node> currentRoots;
 
     public SourceCodeMinimizer(SCMConfiguration configuration) throws IOException {
         language = configuration.getLanguageHandler();
-        parser = language.getParser(configuration.getLanguageVersion());
+        Parser parser = language.getParser(configuration.getLanguageVersion());
         invariant = configuration.getInvariantCheckerConfig().createChecker();
         strategy = configuration.getStrategyConfig().createStrategy();
 
-        Path inputFile = Paths.get(configuration.getInputFileName());
-        Path outputFile = Paths.get(configuration.getOutputFileName());
-        Files.copy(inputFile, outputFile, StandardCopyOption.REPLACE_EXISTING);
-        sourceCharset = configuration.getSourceCharset();
-        cutter = new ASTCutter(parser, sourceCharset, outputFile);
-        originalRootNode = cutter.commitChange();
-        currentRootNode = originalRootNode;
+        Charset sourceCharset = configuration.getSourceCharset();
+        cutters = new ArrayList<>();
+        for (SCMConfiguration.FileMapping mapping: configuration.getFileMappings()) {
+            Files.copy(mapping.input, mapping.output, StandardCopyOption.REPLACE_EXISTING);
+            ASTCutter cutter = new ASTCutter(parser, sourceCharset, mapping.output);
+            cutters.add(cutter);
+        }
+        currentRoots = ASTCutter.commitAll(cutters);
     }
 
     @Override
-    public BufferedReader getScratchReader() throws IOException {
-        return Files.newBufferedReader(cutter.getScratchFile(), sourceCharset);
-    }
-
-    @Override
-    public Parser getCurrentParser() {
-        return parser;
+    public boolean allInputsAreParseable() throws IOException {
+        for (ASTCutter cutter: cutters) {
+            if (!cutter.isScratchFileParseable()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -78,45 +75,69 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
             return false;
         }
         // now, invariant is satisfied
-        try {
-            currentRootNode = cutter.commitChange();
-        } catch (ParseException ex) {
+        List<Node> roots = ASTCutter.commitAll(cutters);
+        if (roots == null) {
             return false;
         }
-        // and parsed OK, so unwinding
+        currentRoots = roots;
+        // and parsed OK, so unwinding...
         if (throwOnSuccess) {
             throw new ContinueException();
         }
-        // or just returning
+        // ... or just returning
         return true;
     }
 
     @Override
     public void tryCleanup() throws Exception {
-        cutter.writeCleanedUpSource();
-        tryCommit(true);
+        tryCleanup(true);
+    }
+
+    public void tryCleanup(boolean throwOnSuccess) throws Exception {
+        for (ASTCutter cutter: cutters) {
+            cutter.writeCleanedUpSource();
+        }
+        tryCommit(throwOnSuccess);
     }
 
     @Override
     public void tryRemoveNodes(Collection<Node> nodesToRemove) throws Exception {
-        cutter.writeTrimmedSource(nodesToRemove);
+        Set<Node> nodes = new HashSet<>(nodesToRemove);
+        for (ASTCutter cutter : cutters) {
+            Set<Node> currentNodesToRemove = new HashSet<>(cutter.getAllNodes());
+            currentNodesToRemove.retainAll(nodes);
+            cutter.writeTrimmedSource(currentNodesToRemove);
+            nodes.removeAll(currentNodesToRemove);
+        }
+        if (!nodes.isEmpty()) {
+            System.err.println("WARNING: strategy tries to remove unknown nodes!");
+        }
         tryCommit(true);
     }
 
     @Override
     public void forceRemoveNodesAndExit(Collection<Node> nodesToRemove) throws Exception {
-        cutter.writeTrimmedSource(nodesToRemove);
-        cutter.commitChange();
+        for (ASTCutter cutter : cutters) {
+            cutter.writeTrimmedSource(nodesToRemove);
+            cutter.commitChange();
+        }
         throw new ExitException();
     }
 
-    @Override
-    public Node getOriginalRoot() {
-        return originalRootNode;
+    private int getTotalFileSize() {
+        int result = 0;
+        for (ASTCutter cutter: cutters) {
+            result += (int) cutter.getScratchFile().toFile().length();
+        }
+        return result;
     }
 
-    private int getCurrentFileSize() {
-        return (int) cutter.getScratchFile().toFile().length();
+    private int getTotalNodeCount() {
+        int result = 0;
+        for (Node root : currentRoots) {
+            result += getNodeCount(root);
+        }
+        return result;
     }
 
     private int getNodeCount(Node subtree) {
@@ -128,29 +149,27 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
     }
 
     private void printStats(String when, int originalSize, int originalNodeCount) {
-        int currentSize = getCurrentFileSize();
-        int currentNodeCount = getNodeCount(currentRootNode);
-        int pcSize = currentSize * 100 / originalSize;
-        int pcNodes = currentNodeCount * 100 / originalNodeCount;
+        int totalSize = getTotalFileSize();
+        int totalNodeCount = getTotalNodeCount();
+        int pcSize = totalSize * 100 / originalSize;
+        int pcNodes = totalNodeCount * 100 / originalNodeCount;
         System.out.println(when + ": size "
-                + currentSize + " bytes (" + pcSize + "%), "
-                + currentNodeCount + " nodes (" + pcNodes + "%)");
+                + totalSize + " bytes (" + pcSize + "%), "
+                + totalNodeCount + " nodes (" + pcNodes + "%)");
         System.out.flush();
     }
 
     public void runMinimization() throws Exception {
-        strategy.initialize(this, originalRootNode);
-        invariant.initialize(this, originalRootNode);
+        strategy.initialize(this);
+        invariant.initialize(this);
 
-        final int originalSize = getCurrentFileSize();
-        final int originalNodeCount = getNodeCount(originalRootNode);
-        System.out.println("Original file: " + originalSize + " bytes, " + originalNodeCount + " nodes.");
+        final int originalSize = getTotalFileSize();
+        final int originalNodeCount = getTotalNodeCount();
+        System.out.println("Original file(s): " + originalSize + " bytes, " + originalNodeCount + " nodes.");
         System.out.flush();
 
-        cutter.writeCleanedUpSource();
-        if (tryCommit(false)) {
-            printStats("After initial white-space cleanup", originalSize, originalNodeCount);
-        }
+        tryCleanup(false);
+        printStats("After initial white-space cleanup", originalSize, originalNodeCount);
 
         int passNumber = 0;
         boolean shouldContinue = true;
@@ -161,7 +180,7 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
                 if (performCleanup) {
                     tryCleanup();
                 } else {
-                    strategy.performSinglePass(currentRootNode);
+                    strategy.performSinglePass(currentRoots);
                     shouldContinue = false;
                 }
             } catch (ContinueException ex) {
@@ -175,16 +194,17 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
             printStats("After pass #" + passNumber + cleanupLabel, originalSize, originalNodeCount);
         }
 
-        cutter.writeCleanedUpSource();
-        if (tryCommit(false)) {
-            printStats("After final white-space cleanup", originalSize, originalNodeCount);
+        tryCleanup(false);
+        printStats("After final white-space cleanup", originalSize, originalNodeCount);
+        for (ASTCutter cutter : cutters) {
+            cutter.writeWithoutEmptyLines();
+            tryCommit(false);
         }
-        cutter.writeWithoutEmptyLines();
-        if (tryCommit(false)) {
-            printStats("After blank line clean up", originalSize, originalNodeCount);
-        }
+        printStats("After blank line clean up", originalSize, originalNodeCount);
 
-        cutter.rollbackChange(); // to the last committed state
-        cutter.close();
+        for (ASTCutter cutter : cutters) {
+            cutter.rollbackChange(); // to the last committed state
+            cutter.close();
+        }
     }
 }

@@ -4,7 +4,6 @@
 
 package net.sourceforge.pmd.scm.invariants;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 
 import net.sourceforge.pmd.lang.Parser;
@@ -15,12 +14,7 @@ import net.sourceforge.pmd.lang.Parser;
  */
 public interface InvariantOperations {
     /**
-     * Get a freshly initialized reader attached to the current scratch file.
+     * Test for syntactical validity of all input files.
      */
-    BufferedReader getScratchReader() throws IOException;
-
-    /**
-     * Get the current parser being used.
-     */
-    Parser getCurrentParser();
+    boolean allInputsAreParseable() throws IOException;
 }

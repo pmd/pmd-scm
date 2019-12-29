@@ -27,7 +27,7 @@ public class DummyInvariant implements Invariant {
     };
 
     @Override
-    public void initialize(InvariantOperations ops, Node rootNode) {
+    public void initialize(InvariantOperations ops) {
         // do nothing
     }
 
