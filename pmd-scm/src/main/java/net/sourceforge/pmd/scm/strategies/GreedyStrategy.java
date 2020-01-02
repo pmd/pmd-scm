@@ -5,6 +5,8 @@
 package net.sourceforge.pmd.scm.strategies;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -108,6 +110,32 @@ public class GreedyStrategy extends AbstractMinimizationStrategy {
     private int positionCountdown;
     private int restartCount;
 
+    private void tryRemoveAt(Node currentNode) throws Exception {
+        List<Collection<Node>> variants = new ArrayList<>();
+
+        if (currentNode.jjtGetParent() != null) {
+            // try dropping this node, if this is not the AST root
+            Set<Node> toRemoveWithThis = new HashSet<>();
+            collectNodesToRemove(toRemoveWithThis, currentNode);
+            variants.add(toRemoveWithThis);
+        }
+
+        // try removing first or second half
+        Set<Node> toRemoveFirstHalf = new HashSet<>();
+        Set<Node> toRemoveSecondHalf = new HashSet<>();
+        for (int i = 0; i < currentNode.jjtGetNumChildren(); ++i) {
+            if (i < currentNode.jjtGetNumChildren() / 2) {
+                collectNodesToRemove(toRemoveFirstHalf, currentNode.jjtGetChild(i));
+            } else {
+                collectNodesToRemove(toRemoveSecondHalf, currentNode.jjtGetChild(i));
+            }
+        }
+        variants.add(toRemoveFirstHalf);
+        variants.add(toRemoveSecondHalf);
+
+        ops.tryRemoveMultipleVariants(variants);
+    }
+
     /**
      * Traverse the passed subtree until successfully removing something.
      *
@@ -122,21 +150,12 @@ public class GreedyStrategy extends AbstractMinimizationStrategy {
         // or programming language...
         // TODO will be mis-positioned if some dependent nodes are before the node itself
         if (positionCountdown <= 0) {
-            Set<Node> toBeRemoved = new HashSet<>();
-            collectNodesToRemove(toBeRemoved, currentNode);
-            ops.tryRemoveNodes(toBeRemoved);
+            tryRemoveAt(currentNode);
             // if exception was not thrown, then removal was not successful
         }
 
         for (int i = 0; i < currentNode.jjtGetNumChildren(); ++i) {
             findNodeToRemove(currentNode.jjtGetChild(i));
-        }
-    }
-
-    private void processSingleRoot(Node currentRoot) throws Exception {
-        // cannot remove root
-        for (int i = 0; i < currentRoot.jjtGetNumChildren(); ++i) {
-            findNodeToRemove(currentRoot.jjtGetChild(i));
         }
     }
 
@@ -150,7 +169,7 @@ public class GreedyStrategy extends AbstractMinimizationStrategy {
             fetchDirectDependentsFromSubtree(root);
         }
         for (Node currentRoot : roots) {
-            processSingleRoot(currentRoot);
+            findNodeToRemove(currentRoot);
         }
         // If we are here, then fast restart logic failed.
         // Trying to restart from scratch...
@@ -158,7 +177,7 @@ public class GreedyStrategy extends AbstractMinimizationStrategy {
         positionCountdown = 0;
         restartCount += 1;
         for (Node currentRoot : roots) {
-            processSingleRoot(currentRoot);
+            findNodeToRemove(currentRoot);
         }
     }
 

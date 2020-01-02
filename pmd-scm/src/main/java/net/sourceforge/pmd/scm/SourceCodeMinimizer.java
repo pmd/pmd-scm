@@ -157,6 +157,13 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
     }
 
     @Override
+    public void tryRemoveMultipleVariants(Collection<Collection<Node>> variants) throws Exception {
+        for (Collection<Node> variant: variants) {
+            tryRemoveNodes(variant);
+        }
+    }
+
+    @Override
     public void forceRemoveNodesAndExit(Collection<Node> nodesToRemove) throws Exception {
         for (ASTCutter cutter : cutters) {
             cutter.writeTrimmedSource(nodesToRemove);

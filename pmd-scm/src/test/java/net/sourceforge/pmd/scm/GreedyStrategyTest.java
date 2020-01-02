@@ -46,13 +46,13 @@ public class GreedyStrategyTest {
 
     @Test
     public void textRetentionTest() throws Exception {
-        testRetention("testRemoval", 29, "test-input.txt", "greedy-test-retained-testRemoval.txt");
+        testRetention("testRemoval", 17, "test-input.txt", "greedy-test-retained-testRemoval.txt");
     }
 
     @Test
     public void performanceTest() throws Exception {
         // test that the strategy did not become too inefficient
-        testRetention("Available languages:", 83, "greedy-large-input.txt", "greedy-large-output.txt");
+        testRetention("Available languages:", 38, "greedy-large-input.txt", "greedy-large-output.txt");
     }
 
     @Test
@@ -78,6 +78,6 @@ public class GreedyStrategyTest {
         minimizer.runMinimization();
         Helper.assertResultedSourceEquals(StandardCharsets.UTF_8, getClass().getResource("greedy-multifile-1.out.java"), input1);
         Helper.assertResultedSourceEquals(StandardCharsets.UTF_8, getClass().getResource("greedy-multifile-2.out.java"), input2);
-        Assert.assertTrue(getSpawnCount(minimizer) <= 53);
+        Assert.assertTrue(getSpawnCount(minimizer) <= 29);
     }
 }

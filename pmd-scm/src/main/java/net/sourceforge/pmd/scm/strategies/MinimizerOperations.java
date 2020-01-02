@@ -33,6 +33,17 @@ public interface MinimizerOperations {
     void tryRemoveNodes(Collection<Node> nodesToRemove) throws Exception;
 
     /**
+     * Checks all provided AST cuttings, if any can be applied
+     *
+     * Semantically, behaves like issuing one tryRemoveNodes() invocation
+     * per variant in some unspecified order.
+     *
+     * This leaves a possibility for SCM to issue them in parallel,
+     * provided it can handle this.
+     */
+    void tryRemoveMultipleVariants(Collection<Collection<Node>> variants) throws Exception;
+
+    /**
      * Removes the specified nodes (even if producing source code that cannot be re-parsed), then exits.
      */
     void forceRemoveNodesAndExit(Collection<Node> nodesToRemove) throws Exception;
