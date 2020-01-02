@@ -5,9 +5,12 @@
 package net.sourceforge.pmd.scm;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -22,10 +25,14 @@ import net.sourceforge.pmd.scm.strategies.MinimizationStrategy;
 import net.sourceforge.pmd.scm.strategies.MinimizerOperations;
 
 public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperations {
+    private final static String DIGEST_ALGO = "MD5";
+
     private static final class ContinueException extends Exception { }
 
     private static final class ExitException extends Exception { }
 
+    private final MessageDigest messageDigest;
+    private final Set<BigInteger> knownHashes;
     private final MinimizerLanguage language;
     private final Invariant invariant;
     private final MinimizationStrategy strategy;
@@ -33,6 +40,15 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
     private List<Node> currentRoots;
 
     public SourceCodeMinimizer(SCMConfiguration configuration) throws IOException {
+        MessageDigest md = null;
+        try {
+            md = MessageDigest.getInstance(DIGEST_ALGO);
+        } catch (NoSuchAlgorithmException e) {
+            System.err.println("Message digest " + DIGEST_ALGO + " not found. Execution may be less efficient.");
+        }
+        messageDigest = md;
+        knownHashes = new HashSet<>();
+
         language = configuration.getLanguageHandler();
         Parser parser = language.getParser(configuration.getLanguageVersion());
         invariant = configuration.getInvariantCheckerConfig().createChecker();
@@ -46,6 +62,17 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
             cutters.add(cutter);
         }
         currentRoots = ASTCutter.commitAll(cutters);
+    }
+
+    private BigInteger hashAllInputsOrNull() throws IOException {
+        if (messageDigest == null) {
+            return null;
+        }
+        messageDigest.reset();
+        for (ASTCutter cutter: cutters) {
+            cutter.hashScratchFile(messageDigest);
+        }
+        return new BigInteger(1, messageDigest.digest());
     }
 
     @Override
@@ -71,9 +98,18 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
      * @throws ContinueException If successful and <code>throwOnSuccess == true</code>
      */
     private boolean tryCommit(boolean throwOnSuccess) throws Exception {
+        // first, skip if already tested this file set
+        BigInteger hash = hashAllInputsOrNull();
+        if (hash != null && knownHashes.contains(hash)) {
+            return false;
+        }
+        knownHashes.add(hash);
+
+        // then, check invariant
         if (!invariant.checkIsSatisfied()) {
             return false;
         }
+
         // now, invariant is satisfied
         List<Node> roots = ASTCutter.commitAll(cutters);
         if (roots == null) {
@@ -102,6 +138,11 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
 
     @Override
     public void tryRemoveNodes(Collection<Node> nodesToRemove) throws Exception {
+        if (nodesToRemove.isEmpty()) {
+            // take only strict subsets of the original source
+            // to avoid infinite loops
+            return;
+        }
         Set<Node> nodes = new HashSet<>(nodesToRemove);
         for (ASTCutter cutter : cutters) {
             Set<Node> currentNodesToRemove = new HashSet<>(cutter.getAllNodes());

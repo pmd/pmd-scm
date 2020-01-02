@@ -11,6 +11,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -210,6 +211,11 @@ public class ASTCutter implements AutoCloseable {
         try (BufferedReader reader = Files.newBufferedReader(from, charset)) {
             return parser.parse(from.toString(), reader);
         }
+    }
+
+    public void hashScratchFile(MessageDigest md) throws IOException {
+        byte[] bytes = Files.readAllBytes(scratchFile);
+        md.update(bytes);
     }
 
     /**
