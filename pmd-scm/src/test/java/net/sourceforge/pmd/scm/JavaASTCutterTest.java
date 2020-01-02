@@ -24,10 +24,10 @@ public class JavaASTCutterTest extends AbstractASTCutterTest {
 
     @Test
     public void testCutting() throws IOException {
-        Node root = initializeFor(getClass().getResource("cutter-test-input.txt"));
+        Node root = initializeFor(getClass().getResource("test-input.txt"));
         List<Node> list = new ArrayList<>();
         list.add(root.getFirstDescendantOfType(ASTClassOrInterfaceBodyDeclaration.class));
         testExactRemoval(list);
-        Helper.assertResultedSourceEquals(StandardCharsets.UTF_8, getClass().getResource("cutter-test-output.txt"), tempFile);
+        Helper.assertResultedSourceEquals(StandardCharsets.UTF_8, getClass().getResource("test-output.txt"), tempFile);
     }
 }

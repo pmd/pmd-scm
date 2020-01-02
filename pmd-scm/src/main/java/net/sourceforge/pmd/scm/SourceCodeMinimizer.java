@@ -159,6 +159,14 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
         System.out.flush();
     }
 
+    Invariant getInvariant() {
+        return invariant;
+    }
+
+    MinimizationStrategy getStrategy() {
+        return strategy;
+    }
+
     public void runMinimization() throws Exception {
         strategy.initialize(this);
         invariant.initialize(this);

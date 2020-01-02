@@ -22,7 +22,7 @@ import net.sourceforge.pmd.lang.ast.Node;
 
 public abstract class AbstractASTCutterTest {
 
-protected AbstractASTCutterTest(Parser parser, Charset charset, String extension) throws IOException {
+protected AbstractASTCutterTest(Parser parser, Charset charset, String extension, double length) throws IOException {
 tempFile = Files.createTempFile("pmd-test-", "." + extension);
 this.parser = parser;
 this.charset = charset;

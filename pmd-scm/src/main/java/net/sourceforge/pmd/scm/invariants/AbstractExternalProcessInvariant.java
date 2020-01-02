@@ -73,6 +73,10 @@ public abstract class AbstractExternalProcessInvariant implements Invariant {
         return result;
     }
 
+    public int getSpawnCount() {
+        return spawnCount;
+    }
+
     @Override
     public void printStatistics(PrintStream stream) {
         stream.println("Compiler invocation count: " + spawnCount);
