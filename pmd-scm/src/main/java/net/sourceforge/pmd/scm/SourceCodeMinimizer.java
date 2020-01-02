@@ -206,5 +206,8 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
             cutter.rollbackChange(); // to the last committed state
             cutter.close();
         }
+
+        invariant.printStatistics(System.out);
+        strategy.printStatistics(System.out);
     }
 }

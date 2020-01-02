@@ -4,6 +4,7 @@
 
 package net.sourceforge.pmd.scm.strategies;
 
+import java.io.PrintStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -103,8 +104,9 @@ public class GreedyStrategy extends AbstractMinimizationStrategy {
         }
     }
 
-    private int previousPosition = 0;
+    private int previousPosition;
     private int positionCountdown;
+    private int restartCount;
 
     /**
      * Traverse the passed subtree until successfully removing something.
@@ -154,8 +156,14 @@ public class GreedyStrategy extends AbstractMinimizationStrategy {
         // Trying to restart from scratch...
         previousPosition = 0;
         positionCountdown = 0;
+        restartCount += 1;
         for (Node currentRoot : roots) {
             processSingleRoot(currentRoot);
         }
+    }
+
+    @Override
+    public void printStatistics(PrintStream stream) {
+        stream.println("Greedy strategy restart count: " + restartCount);
     }
 }

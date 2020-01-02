@@ -4,7 +4,7 @@
 
 package net.sourceforge.pmd.scm.invariants;
 
-import net.sourceforge.pmd.lang.ast.Node;
+import java.io.PrintStream;
 
 /**
  * Dummy invariant that is always satisfied.
@@ -39,5 +39,10 @@ public class DummyInvariant implements Invariant {
     @Override
     public String toString() {
         return "Dummy invariant (always satisfied)";
+    }
+
+    @Override
+    public void printStatistics(PrintStream stream) {
+        // print nothing
     }
 }

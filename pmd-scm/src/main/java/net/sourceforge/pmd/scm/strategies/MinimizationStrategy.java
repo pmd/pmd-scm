@@ -4,6 +4,7 @@
 
 package net.sourceforge.pmd.scm.strategies;
 
+import java.io.PrintStream;
 import java.util.List;
 
 import net.sourceforge.pmd.lang.ast.Node;
@@ -21,4 +22,9 @@ public interface MinimizationStrategy {
      * Performs single minimization pass.
      */
     void performSinglePass(List<Node> roots) throws Exception;
+
+    /**
+     * Print current statistics.
+     */
+    void printStatistics(PrintStream stream);
 }

@@ -4,7 +4,7 @@
 
 package net.sourceforge.pmd.scm.invariants;
 
-import net.sourceforge.pmd.lang.ast.Node;
+import java.io.PrintStream;
 
 /**
  * Checks some invariant about processing the source by the compiler.
@@ -21,4 +21,9 @@ public interface Invariant {
      * Check that the scratch file in its current state satisfies the invariant.
      */
     boolean checkIsSatisfied() throws Exception;
+
+    /**
+     * Print current statistics.
+     */
+    void printStatistics(PrintStream stream);
 }
