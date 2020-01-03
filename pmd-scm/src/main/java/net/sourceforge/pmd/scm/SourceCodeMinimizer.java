@@ -136,6 +136,34 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
         tryCommit(throwOnSuccess);
     }
 
+    private void removeNodesWithVerboseError(ASTCutter cutter, Collection<Node> nodesToRemove) throws IOException {
+        // Give user some information when AST nodes turns out overlapping
+        try {
+            cutter.writeTrimmedSource(nodesToRemove);
+        } catch (IllegalArgumentException ex) {
+            ex.printStackTrace(System.err);
+            System.err.println("An error occurred while cutting off the following nodes:");
+            for (Node node: nodesToRemove) {
+                String line = cutter.getScratchFile().toString() + ":" + Helper.explainNode(node);
+                System.err.println(line);
+            }
+            System.exit(1);
+        }
+    }
+
+    private void writeTrimmedSources(Collection<Node> nodesToRemove) throws IOException {
+        Set<Node> nodes = new HashSet<>(nodesToRemove);
+        for (ASTCutter cutter : cutters) {
+            Set<Node> currentNodesToRemove = new HashSet<>(cutter.getAllNodes());
+            currentNodesToRemove.retainAll(nodes);
+            removeNodesWithVerboseError(cutter, currentNodesToRemove);
+            nodes.removeAll(currentNodesToRemove);
+        }
+        if (!nodes.isEmpty()) {
+            System.err.println("WARNING: strategy tries to remove unknown nodes!");
+        }
+    }
+
     @Override
     public void tryRemoveNodes(Collection<Node> nodesToRemove) throws Exception {
         if (nodesToRemove.isEmpty()) {
@@ -143,16 +171,7 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
             // to avoid infinite loops
             return;
         }
-        Set<Node> nodes = new HashSet<>(nodesToRemove);
-        for (ASTCutter cutter : cutters) {
-            Set<Node> currentNodesToRemove = new HashSet<>(cutter.getAllNodes());
-            currentNodesToRemove.retainAll(nodes);
-            cutter.writeTrimmedSource(currentNodesToRemove);
-            nodes.removeAll(currentNodesToRemove);
-        }
-        if (!nodes.isEmpty()) {
-            System.err.println("WARNING: strategy tries to remove unknown nodes!");
-        }
+        writeTrimmedSources(nodesToRemove);
         tryCommit(true);
     }
 
@@ -165,10 +184,7 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
 
     @Override
     public void forceRemoveNodesAndExit(Collection<Node> nodesToRemove) throws Exception {
-        for (ASTCutter cutter : cutters) {
-            cutter.writeTrimmedSource(nodesToRemove);
-            cutter.commitChange();
-        }
+        writeTrimmedSources(nodesToRemove);
         throw new ExitException();
     }
 
