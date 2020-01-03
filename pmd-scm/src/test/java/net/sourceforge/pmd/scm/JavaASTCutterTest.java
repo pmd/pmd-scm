@@ -28,6 +28,12 @@ public class JavaASTCutterTest extends AbstractASTCutterTest {
         List<Node> list = new ArrayList<>();
         list.add(root.getFirstDescendantOfType(ASTClassOrInterfaceBodyDeclaration.class));
         testExactRemoval(list);
-        Helper.assertResultedSourceEquals(StandardCharsets.UTF_8, getClass().getResource("test-output.txt"), tempFile);
+        TestHelper.assertResultedSourceEquals(StandardCharsets.UTF_8, getClass().getResource("test-output.txt"), tempFile);
+    }
+
+    @Test
+    public void testMetainfo() throws IOException {
+        Node root = initializeFor(getClass().getResource("test-input.txt"));
+        testRemoveOneByOne(root);
     }
 }

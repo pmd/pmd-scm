@@ -15,8 +15,8 @@ import java.nio.file.StandardCopyOption;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 
-public final class Helper {
-    private Helper() { }
+public final class TestHelper {
+    private TestHelper() { }
 
     public static void assertResultedSourceEquals(Charset charset, URL expected, Path actual) throws IOException {
         String expectedContents = IOUtils.toString(expected, charset);

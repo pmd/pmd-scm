@@ -16,6 +16,10 @@
             <groupId>net.sourceforge.pmd</groupId>
             <artifactId>pmd-java</artifactId>
         </dependency>
+        <dependency>
+            <groupId>net.sourceforge.pmd</groupId>
+            <artifactId>pmd-modelica</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>junit</groupId>

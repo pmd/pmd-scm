@@ -23,7 +23,7 @@ public class GreedyStrategyTest {
 
     private void testRetention(String textToRetain, int maxSpawns, String inputFileName, String referenceFileName) throws Exception {
         SCMConfiguration configuration = new SCMConfiguration();
-        Path inputFile = Helper.copyToTemporaryFile(getClass().getResourceAsStream(inputFileName), ".in");
+        Path inputFile = TestHelper.copyToTemporaryFile(getClass().getResourceAsStream(inputFileName), ".in");
         Path outputFile = Files.createTempFile("pmd-test-", ".out");
         String cmdline;
         if (SystemUtils.IS_OS_WINDOWS) {
@@ -40,7 +40,7 @@ public class GreedyStrategyTest {
         Assert.assertNull(configuration.getErrorString());
         SourceCodeMinimizer minimizer = new SourceCodeMinimizer(configuration);
         minimizer.runMinimization();
-        Helper.assertResultedSourceEquals(StandardCharsets.UTF_8, getClass().getResource(referenceFileName), outputFile);
+        TestHelper.assertResultedSourceEquals(StandardCharsets.UTF_8, getClass().getResource(referenceFileName), outputFile);
         Assert.assertTrue(getSpawnCount(minimizer) <= maxSpawns);
     }
 
@@ -58,8 +58,8 @@ public class GreedyStrategyTest {
     @Test
     public void multiFileJavaMinimization() throws Exception {
         SCMConfiguration configuration = new SCMConfiguration();
-        Path input1 = Helper.copyToTemporaryFile(getClass().getResourceAsStream("greedy-multifile-1.java"), ".java");
-        Path input2 = Helper.copyToTemporaryFile(getClass().getResourceAsStream("greedy-multifile-2.java"), ".java");
+        Path input1 = TestHelper.copyToTemporaryFile(getClass().getResourceAsStream("greedy-multifile-1.java"), ".java");
+        Path input2 = TestHelper.copyToTemporaryFile(getClass().getResourceAsStream("greedy-multifile-2.java"), ".java");
 
         Path fileList = Files.createTempFile("pmd-test-file-list", ".txt");
         List<String> fileNames = new ArrayList<>();
@@ -76,8 +76,8 @@ public class GreedyStrategyTest {
         Assert.assertNull(configuration.getErrorString());
         SourceCodeMinimizer minimizer = new SourceCodeMinimizer(configuration);
         minimizer.runMinimization();
-        Helper.assertResultedSourceEquals(StandardCharsets.UTF_8, getClass().getResource("greedy-multifile-1.out.java"), input1);
-        Helper.assertResultedSourceEquals(StandardCharsets.UTF_8, getClass().getResource("greedy-multifile-2.out.java"), input2);
+        TestHelper.assertResultedSourceEquals(StandardCharsets.UTF_8, getClass().getResource("greedy-multifile-1.out.java"), input1);
+        TestHelper.assertResultedSourceEquals(StandardCharsets.UTF_8, getClass().getResource("greedy-multifile-2.out.java"), input2);
         Assert.assertTrue(getSpawnCount(minimizer) <= 29);
     }
 }

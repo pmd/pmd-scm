@@ -75,7 +75,7 @@ public abstract class AbstractASTCutterTest {
 
     protected Node initializeFor(URL resourceUrl) throws IOException {
         Files.copy(resourceUrl.openStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
-        cutter = new ASTCutter(parser, charset, tempFile);
+        cutter = new ASTCutter(parser, charset, tempFile, false);
         originalRoot = cutter.commitChange();
         return originalRoot;
     }
@@ -85,4 +85,22 @@ public abstract class AbstractASTCutterTest {
         Node trimmedRoot = load(tempFile);
         assertEqualsAfterRemoval(originalRoot, new HashSet<Node>(nodesToRemove), trimmedRoot);
     }
+
+    // Just test that nodes can be successfully dropped
+    public void testRemoveOneByOne(Node node) throws IOException {
+        if (node.jjtGetParent() != null) {
+            List<Node> list = new ArrayList<>();
+            list.add(node);
+            try {
+                cutter.writeTrimmedSource(list);
+            } catch (IllegalArgumentException ex) {
+                Assert.fail("Error while removing node: " + Helper.explainNode(node) + "\n" + ex.getMessage());
+            }
+        }
+
+        for (int i = 0; i < node.jjtGetNumChildren(); ++i) {
+            testRemoveOneByOne(node.jjtGetChild(i));
+        }
+    }
+
 }

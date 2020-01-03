@@ -53,17 +53,24 @@ public class ASTCutter implements AutoCloseable {
     private final Path scratchFile;
     private Node currentRoot;
     private final Set<Node> currentDocumentNodes = new HashSet<>();
+    private final boolean validateNodes;
 
     /**
      * Create ASTCutter instance
-     * @param parser      parser for the original and intermediate source files
-     * @param charset     charset of source to be cut
-     * @param scratchFile file to be modified in-place
+     * @param parser        parser for the original and intermediate source files
+     * @param charset       charset of source to be cut
+     * @param scratchFile   file to be modified in-place
+     * @param validateNodes silently ignore invalid nodes
      */
-    public ASTCutter(Parser parser, Charset charset, Path scratchFile) throws IOException {
+    public ASTCutter(Parser parser, Charset charset, Path scratchFile, boolean validateNodes) throws IOException {
         this.parser = parser;
         this.charset = charset;
         this.scratchFile = scratchFile;
+        this.validateNodes = validateNodes;
+    }
+
+    public ASTCutter(Parser parser, Charset charset, Path scratchFile) throws IOException {
+        this(parser, charset, scratchFile, true);
     }
 
     public Path getScratchFile() {
@@ -89,8 +96,19 @@ public class ASTCutter implements AutoCloseable {
         return result;
     }
 
+    /**
+     * Validates node.
+     *
+     * For now, checks that the start position of the node is not after the end position.
+     */
+    private boolean nodeIsValid(Node node) {
+        return node.getBeginLine() < node.getEndLine()
+                || (node.getBeginLine() == node.getEndLine() && node.getBeginColumn() < node.getEndColumn());
+    }
+
     private void calculateTreeCutting(List<DeleteDocumentOperation> result, Node node, Set<Node> deletedNodes) {
-        if (deletedNodes.contains(node)) {
+        // Technically, invalid node can lead to infinite loop when input hashing is off
+        if (deletedNodes.contains(node) && (!validateNodes || nodeIsValid(node))) {
             // not recursing, deleting the whole range
             result.add(new DeleteDocumentOperation(
                     node.getBeginLine() - 1, node.getEndLine() - 1,
@@ -120,7 +138,10 @@ public class ASTCutter implements AutoCloseable {
 
         boolean wasTrimmedHere = false;
 
-        if (!wasJustTrimmed && prevEndLine < curBeginLine - 1) {
+        int curEndLine = prevEndLine;
+        int curEndColumn = prevEndColumn;
+
+        if (!wasJustTrimmed && prevEndLine < curBeginLine - 1 && (!validateNodes || nodeIsValid(node))) {
             // retain whitespace indentation to the left
             String curLine = lines.get(curBeginLine);
             int endDeleteLine = curBeginLine;
@@ -147,20 +168,20 @@ public class ASTCutter implements AutoCloseable {
             }
             if (okToTrim) {
                 result.add(new DeleteDocumentOperation(prevEndLine + 1, endDeleteLine, 0, endDeleteColumn));
+                curEndLine = endDeleteLine;
+                curEndColumn = endDeleteColumn;
                 wasTrimmedHere = true;
             }
         }
 
-        int prevChildEndLine = prevEndLine;
-        int prevChildEndColumn = prevEndColumn;
 
         for (int childInd = 0; childInd < node.jjtGetNumChildren(); ++childInd) {
             final Node child = node.jjtGetChild(childInd);
 
-            calculateTreeHolesTrimming(result, lines, child, prevChildEndLine, prevChildEndColumn, childInd == 0 && (wasTrimmedHere || wasJustTrimmed));
+            calculateTreeHolesTrimming(result, lines, child, curEndLine, curEndColumn, childInd == 0 && (wasTrimmedHere || wasJustTrimmed));
 
-            prevChildEndLine = child.getEndLine() - 1;
-            prevChildEndColumn = child.getEndColumn() - 1;
+            curEndLine = Math.max(curEndLine, child.getEndLine() - 1);
+            curEndColumn = Math.max(curEndColumn, child.getEndColumn() - 1);
         }
     }
 
