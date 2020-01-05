@@ -5,14 +5,13 @@
 package net.sourceforge.pmd.scm;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.Assert;
 
 public final class TestHelper {
@@ -24,9 +23,11 @@ public final class TestHelper {
         Assert.assertEquals(expectedContents, actualContents);
     }
 
-    public static Path copyToTemporaryFile(InputStream stream, String suffix) throws IOException {
-        Path file = Files.createTempFile("pmd-test-", suffix);
-        Files.copy(stream, file, StandardCopyOption.REPLACE_EXISTING);
-        return file;
+    public static String printFileContentsCmd(String fileName) {
+        if (SystemUtils.IS_OS_WINDOWS) {
+            return "type " + fileName;
+        } else {
+            return "cat " + fileName;
+        }
     }
 }

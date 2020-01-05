@@ -12,25 +12,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.sourceforge.pmd.scm.invariants.AbstractExternalProcessInvariant;
-import org.apache.commons.lang3.SystemUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class GreedyStrategyTest {
+public class GreedyStrategyTest extends AbstractTestWithFiles {
     private int getSpawnCount(SourceCodeMinimizer minimizer) {
         return ((AbstractExternalProcessInvariant) minimizer.getInvariant()).getSpawnCount();
     }
 
     private void testRetention(String textToRetain, int maxSpawns, String inputFileName, String referenceFileName) throws Exception {
         SCMConfiguration configuration = new SCMConfiguration();
-        Path inputFile = TestHelper.copyToTemporaryFile(getClass().getResourceAsStream(inputFileName), ".in");
-        Path outputFile = Files.createTempFile("pmd-test-", ".out");
-        String cmdline;
-        if (SystemUtils.IS_OS_WINDOWS) {
-            cmdline = "type " + outputFile.toString();
-        } else {
-            cmdline = "cat " + outputFile.toString();
-        }
+        Path inputFile = copyToTemporaryFile(getClass().getResourceAsStream(inputFileName), ".in");
+        Path outputFile = removeAfterTest(Files.createTempFile("pmd-test-", ".out"));
+        String cmdline = TestHelper.printFileContentsCmd(outputFile.toString());
         String[] args = {
             "--language", "java", "--input-file", inputFile.toString(), "--output-file", outputFile.toString(),
             "--invariant", "message", "--printed-message", textToRetain, "--command-line", cmdline,
@@ -58,10 +52,10 @@ public class GreedyStrategyTest {
     @Test
     public void multiFileJavaMinimization() throws Exception {
         SCMConfiguration configuration = new SCMConfiguration();
-        Path input1 = TestHelper.copyToTemporaryFile(getClass().getResourceAsStream("greedy-multifile-1.java"), ".java");
-        Path input2 = TestHelper.copyToTemporaryFile(getClass().getResourceAsStream("greedy-multifile-2.java"), ".java");
+        Path input1 = copyToTemporaryFile(getClass().getResourceAsStream("greedy-multifile-1.java"), ".java");
+        Path input2 = copyToTemporaryFile(getClass().getResourceAsStream("greedy-multifile-2.java"), ".java");
 
-        Path fileList = Files.createTempFile("pmd-test-file-list", ".txt");
+        Path fileList = removeAfterTest(Files.createTempFile("pmd-test-file-list", ".txt"));
         List<String> fileNames = new ArrayList<>();
         fileNames.add(input1.toString());
         fileNames.add(input2.toString());

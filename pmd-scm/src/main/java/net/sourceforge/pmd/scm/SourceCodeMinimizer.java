@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -38,6 +39,7 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
     private final MinimizationStrategy strategy;
     private final List<ASTCutter> cutters;
     private List<Node> currentRoots;
+    private List<SCMConfiguration.FileMapping> fileMappings;
 
     public SourceCodeMinimizer(SCMConfiguration configuration) throws IOException {
         MessageDigest md = null;
@@ -56,7 +58,8 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
 
         Charset sourceCharset = configuration.getSourceCharset();
         cutters = new ArrayList<>();
-        for (SCMConfiguration.FileMapping mapping: configuration.getFileMappings()) {
+        fileMappings = configuration.getFileMappings();
+        for (SCMConfiguration.FileMapping mapping: fileMappings) {
             Files.copy(mapping.input, mapping.output, StandardCopyOption.REPLACE_EXISTING);
             ASTCutter cutter = new ASTCutter(parser, sourceCharset, mapping.output);
             cutters.add(cutter);
@@ -83,6 +86,15 @@ public class SourceCodeMinimizer implements InvariantOperations, MinimizerOperat
             }
         }
         return true;
+    }
+
+    @Override
+    public List<Path> getScratchFileNames() {
+        List<Path> result = new ArrayList<>();
+        for (SCMConfiguration.FileMapping mapping: fileMappings) {
+            result.add(mapping.output);
+        }
+        return result;
     }
 
     @Override

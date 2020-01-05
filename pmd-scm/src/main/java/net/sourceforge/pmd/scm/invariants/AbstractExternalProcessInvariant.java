@@ -8,6 +8,7 @@ import org.apache.commons.lang3.SystemUtils;
 
 import com.beust.jcommander.Parameter;
 
+import java.io.IOException;
 import java.io.PrintStream;
 
 /**
@@ -34,29 +35,39 @@ public abstract class AbstractExternalProcessInvariant implements Invariant {
         }
     }
 
-    private InvariantOperations ops;
-    private String[] commandArgs;
+    private final String compilerCommandLine;
+    protected InvariantOperations ops;
     private int spawnCount;
     private int fruitfulTests;
 
-    private static String[] createCommandLine(AbstractConfiguration configuration) {
-        if (SystemUtils.IS_OS_WINDOWS) {
-            return new String[] { "cmd.exe", "/C", configuration.compilerCommandLine };
-        } else {
-            return new String[] { "/bin/sh", "-c", configuration.compilerCommandLine };
-        }
-    }
-
     protected AbstractExternalProcessInvariant(AbstractConfiguration configuration) {
-        commandArgs = createCommandLine(configuration);
+        compilerCommandLine = configuration.compilerCommandLine;
     }
 
     @Override
-    public void initialize(InvariantOperations ops) {
+    public void initialize(InvariantOperations ops) throws IOException {
         this.ops = ops;
     }
 
     protected abstract boolean testSatisfied(ProcessBuilder pb) throws Exception;
+
+    protected String getCompilerCommandLine() {
+        return compilerCommandLine;
+    }
+
+    protected ProcessBuilder createProcessBuilder() {
+        ProcessBuilder pb = new ProcessBuilder();
+        if (SystemUtils.IS_OS_WINDOWS) {
+            pb.command("cmd.exe", "/C", compilerCommandLine);
+        } else {
+            pb.command("/bin/sh", "-c", compilerCommandLine);
+        }
+        return pb;
+    }
+
+    protected boolean testSatisfied() throws Exception {
+        return testSatisfied(createProcessBuilder());
+    }
 
     @Override
     public boolean checkIsSatisfied() throws Exception {
@@ -67,7 +78,7 @@ public abstract class AbstractExternalProcessInvariant implements Invariant {
 
         // then proceed to spawning subprocess
         spawnCount += 1;
-        boolean result = testSatisfied(new ProcessBuilder().command(commandArgs));
+        boolean result = testSatisfied();
         fruitfulTests += result ? 1 : 0;
 
         return result;
