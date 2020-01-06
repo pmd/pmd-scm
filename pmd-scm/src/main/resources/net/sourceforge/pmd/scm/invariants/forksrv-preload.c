@@ -59,7 +59,11 @@
 #define MAX_INPUTS 1024
 
 // Inspecting 6-args syscalls is not supported
-static int inspected_syscalls[] = { SYS_execve, SYS_execveat, SYS_fork, SYS_vfork, SYS_clone, SYS_openat, SYS_stat };
+static int inspected_syscalls[] = {
+    SYS_open, SYS_openat, SYS_stat,
+    SYS_execve, SYS_execveat,
+    SYS_fork, SYS_vfork, SYS_clone,
+};
 
 struct file_id {
   dev_t dev;
@@ -191,6 +195,12 @@ static void handle_sigsys(int num, siginfo_t *si, void *arg)
   greg_t *gregs = ctx->uc_mcontext.gregs;
   int sc_num = gregs[SC_NUM_REG];
   switch (sc_num) {
+  case SYS_open:
+    if (is_input_name((const char *) gregs[ARG_REG_1])) {
+      fprintf(stderr, "Opening %s, starting fork server.\n", (const char *) gregs[ARG_REG_1]);
+      start_forkserver();
+    }
+    break;
   case SYS_openat:
     if (is_input_name((const char *) gregs[ARG_REG_2])) {
       fprintf(stderr, "Opening %s, starting fork server.\n", (const char *) gregs[ARG_REG_2]);
