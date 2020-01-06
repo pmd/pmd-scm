@@ -7,6 +7,7 @@ package net.sourceforge.pmd.scm.invariants;
 import com.beust.jcommander.Parameter;
 import org.apache.commons.lang3.SystemUtils;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -116,8 +117,8 @@ public abstract class AbstractForkServerAwareProcessInvariant extends AbstractEx
 
     private Process forkServer;
     private OutputStream forkServerStdin;
-    private InputStreamReader forkServerStdout;
-    private InputStreamReader forkServerStderr;
+    private BufferedReader forkServerStdout;
+    private BufferedReader forkServerStderr;
 
     /**
      * Misc files to be cleaned up just before JVM termination.
@@ -157,33 +158,6 @@ public abstract class AbstractForkServerAwareProcessInvariant extends AbstractEx
     }
 
     /**
-     * Reads a line of text until '\n', <b>byte-by-byte</b>.
-     *
-     * This is used to avoid deadlocks: more output may be read from the forkserver,
-     * but only after writing request to <b>stdin</b>. But first we should know that
-     * the forkserver is ready -- by reading its output streams.
-     * @param reader     A stream to read from
-     * @param lineBuffer A scratch buffer
-     * @return A single line of output until '\n' (excluding) or EOF (if non-empty)
-     *         or <code>null</code>, if got EOF as the very first character
-     * @throws IOException
-     */
-    private String readString(InputStreamReader reader, char[] lineBuffer) throws IOException {
-        int lineLength;
-        for (lineLength = 0; lineLength < lineBuffer.length; ++lineLength) {
-            int ch = reader.read();
-            if (ch == -1 && lineLength == 0) {
-                return null;
-            }
-            if (ch == -1 || ch == '\n') {
-                break;
-            }
-            lineBuffer[lineLength] = (char) ch;
-        }
-        return new String(lineBuffer, 0, lineLength);
-    }
-
-    /**
      * Reads all lines of output until the {@link #FORKSERVER_TO_SCM_MARKER}.
      *
      * @param reader         A stream to read from
@@ -193,10 +167,9 @@ public abstract class AbstractForkServerAwareProcessInvariant extends AbstractEx
      *         or <code>null</code> on unexpected EOF
      * @throws IOException
      */
-    private String readUntilMarker(InputStreamReader reader, List<String> stdoutContents) throws IOException {
-        char[] lineBuffer = new char[MAX_LINE_LENGTH];
+    private String readUntilMarker(BufferedReader reader, List<String> stdoutContents) throws IOException {
         while (true) {
-            String line = readString(reader, lineBuffer);
+            String line = reader.readLine();
             if (line == null) {
                 return null;
             }
@@ -274,8 +247,8 @@ public abstract class AbstractForkServerAwareProcessInvariant extends AbstractEx
             preloadedObject = compilePreloadedObject();
             forkServer = createProcessBuilder().start();
             forkServerStdin = forkServer.getOutputStream();
-            forkServerStdout = new InputStreamReader(forkServer.getInputStream(), getCharset());
-            forkServerStderr = new InputStreamReader(forkServer.getErrorStream(), getCharset());
+            forkServerStdout = new BufferedReader(new InputStreamReader(forkServer.getInputStream(), getCharset()));
+            forkServerStderr = new BufferedReader(new InputStreamReader(forkServer.getErrorStream(), getCharset()));
 
             // Read startup messages
             List<String> stdoutContents = new ArrayList<>();
