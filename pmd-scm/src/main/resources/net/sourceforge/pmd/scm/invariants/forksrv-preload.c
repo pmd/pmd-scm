@@ -278,7 +278,11 @@ static void initialize_signal_interceptor(void)
   sigaction(SIGSYS, &sig, NULL);
 
   prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
-  syscall(SYS_seccomp, SECCOMP_SET_MODE_FILTER, 0, &program);
+  int ret = syscall(SYS_seccomp, SECCOMP_SET_MODE_FILTER, 0, &program);
+  if (ret != 0) {
+    perror("seccomp");
+    abort();
+  }
 
   free(filter);
 }
