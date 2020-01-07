@@ -20,7 +20,7 @@ public class PrintedMessageInvariant extends AbstractExternalProcessInvariant {
         @Parameter(names = "--printed-message", description = "Message that should be printed by the compiler", required = true)
         private String message;
 
-        @Parameter(names = "--printed-message-charset", description = "Charset of compiler output",
+        @Parameter(names = "--printed-message-encoding", description = "Encoding of compiler output",
                 converter = SCMConfiguration.CharsetConverter.class)
         private Charset charset = Charset.defaultCharset();
 

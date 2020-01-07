@@ -38,32 +38,32 @@ public class SCMConfiguration extends AbstractConfiguration implements IVariable
     private MinimizationStrategyConfiguration strategyConfiguration;
     private InvariantConfiguration invariantConfiguration;
 
-    @Parameter(names = "--input-file", description = "Original file that should be minimized, or list of such files",
+    @Parameter(names = { "--input-file", "-i" }, description = "Original file that should be minimized, or list of such files",
             required = true, variableArity = true)
     public List<String> inputFileNames = new ArrayList<>();
 
-    @Parameter(names = "--output-file", description = "Output file (used as a scratch file, too), or list of such files",
+    @Parameter(names = { "--output-file", "-o" }, description = "Output file (used as a scratch file, too), or list of such files",
             required = true, variableArity = true)
     public List<String> outputFileNames = new ArrayList<>();
 
-    @Parameter(names = "--charset", description = "Charset of the source file to be minimized",
+    @Parameter(names = { "--encoding", "-e" }, description = "Encoding of the source file to be minimized",
             converter = CharsetConverter.class)
     private Charset sourceCharset = Charset.defaultCharset();
 
-    @Parameter(names = "--language", description = "Source code language",
+    @Parameter(names = { "--language", "-l" }, description = "Source code language",
             required = true, converter = LanguageParameterHandler.class, validateWith = LanguageParameterHandler.class)
     private MinimizerLanguage language;
 
-    @Parameter(names = "--language-version", description = "Specific language version")
+    @Parameter(names = { "--language-version", "-v" }, description = "Specific language version")
     private String languageVersion;
 
-    @Parameter(names = "--strategy", description = "Minimization strategy", required = true)
+    @Parameter(names = { "--strategy", "-S" }, description = "Minimization strategy", required = true)
     private String strategy;
 
-    @Parameter(names = "--invariant", description = "Invariant to preserve during minimization")
+    @Parameter(names = { "--invariant", "-I" } , description = "Invariant to preserve during minimization")
     private String invariantChecker = "dummy";
 
-    @Parameter(names = "--help", description = "Display help", help = true)
+    @Parameter(names = { "--help", "-h" }, description = "Display help", help = true)
     private boolean help;
 
     private String errorString;
