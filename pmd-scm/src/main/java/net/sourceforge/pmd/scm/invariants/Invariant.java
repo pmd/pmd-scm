@@ -4,6 +4,7 @@
 
 package net.sourceforge.pmd.scm.invariants;
 
+import java.io.IOException;
 import java.io.PrintStream;
 
 /**
@@ -15,7 +16,7 @@ public interface Invariant {
      *
      * @param ops      Operations provided by the SourceCodeMinimizer
      */
-    void initialize(InvariantOperations ops);
+    void initialize(InvariantOperations ops) throws IOException;
 
     /**
      * Check that the scratch file in its current state satisfies the invariant.

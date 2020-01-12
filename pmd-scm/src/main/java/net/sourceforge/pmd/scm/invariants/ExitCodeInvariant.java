@@ -6,11 +6,13 @@ package net.sourceforge.pmd.scm.invariants;
 
 import com.beust.jcommander.Parameter;
 
+import java.util.List;
+
 /**
  * Checks that compiler exits with code from the specified range.
  */
-public class ExitCodeInvariant extends AbstractExternalProcessInvariant {
-    public static final class Configuration extends AbstractConfiguration {
+public class ExitCodeInvariant extends AbstractForkServerAwareProcessInvariant {
+    public static final class Configuration extends AbstractConfigurationWithForkServer {
         @Parameter(names = "--min-return", description = "Minimum exit code value (inclusive)")
         private int min = 1;
 
@@ -38,7 +40,7 @@ public class ExitCodeInvariant extends AbstractExternalProcessInvariant {
         }
     }
 
-    public static final InvariantConfigurationFactory FACTORY = new AbstractFactory("exitcode") {
+    public static final InvariantConfigurationFactory FACTORY = new AbstractFactoryWithForkServer("exitcode") {
         @Override
         public InvariantConfiguration createConfiguration() {
             return new Configuration();
@@ -61,12 +63,17 @@ public class ExitCodeInvariant extends AbstractExternalProcessInvariant {
     }
 
     @Override
+    protected boolean testSatisfied(int exitCode, List<String> stdout, List<String> stderr) {
+        return min <= exitCode && exitCode <= max;
+    }
+
+    @Override
     protected boolean testSatisfied(ProcessBuilder pb) throws Exception {
         Process process = pb.start();
 
         int returnCode = process.waitFor();
 
-        return min <= returnCode && returnCode <= max;
+        return testSatisfied(returnCode, null, null);
     }
 
     @Override

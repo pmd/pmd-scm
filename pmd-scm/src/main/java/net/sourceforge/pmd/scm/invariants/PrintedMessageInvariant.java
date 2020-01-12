@@ -7,6 +7,7 @@ package net.sourceforge.pmd.scm.invariants;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.List;
 
 import net.sourceforge.pmd.scm.SCMConfiguration;
 
@@ -15,8 +16,8 @@ import com.beust.jcommander.Parameter;
 /**
  * Checks that the compiler printed the specified message to its stdout or stderr during execution.
  */
-public class PrintedMessageInvariant extends AbstractExternalProcessInvariant {
-    public static final class Configuration extends AbstractConfiguration {
+public class PrintedMessageInvariant extends AbstractForkServerAwareProcessInvariant {
+    public static final class Configuration extends AbstractConfigurationWithForkServer {
         @Parameter(names = "--printed-message", description = "Message that should be printed by the compiler", required = true)
         private String message;
 
@@ -38,7 +39,7 @@ public class PrintedMessageInvariant extends AbstractExternalProcessInvariant {
         }
     }
 
-    public static final InvariantConfigurationFactory FACTORY = new AbstractFactory("message") {
+    public static final InvariantConfigurationFactory FACTORY = new AbstractFactoryWithForkServer("message") {
         @Override
         public InvariantConfiguration createConfiguration() {
             return new Configuration();
@@ -55,10 +56,30 @@ public class PrintedMessageInvariant extends AbstractExternalProcessInvariant {
     }
 
     @Override
+    protected Charset getCharset() {
+        return charset;
+    }
+
+    @Override
+    protected boolean testSatisfied(int exitCode, List<String> stdout, List<String> stderr) {
+        for (String line: stdout) {
+            if (line.contains(message)) {
+                return true;
+            }
+        }
+        for (String line: stderr) {
+            if (line.contains(message)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     protected boolean testSatisfied(ProcessBuilder pb) throws Exception {
         Process process = pb.redirectErrorStream(true).start();
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), charset))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), getCharset()))) {
             while (true) {
                 String line = reader.readLine();
                 if (line == null) {

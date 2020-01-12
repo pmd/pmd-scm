@@ -5,8 +5,8 @@
 package net.sourceforge.pmd.scm.invariants;
 
 import java.io.IOException;
-
-import net.sourceforge.pmd.lang.Parser;
+import java.nio.file.Path;
+import java.util.List;
 
 /**
  * A public interface provided by the {@link net.sourceforge.pmd.scm.SourceCodeMinimizer} to
@@ -17,4 +17,9 @@ public interface InvariantOperations {
      * Test for syntactical validity of all input files.
      */
     boolean allInputsAreParseable() throws IOException;
+
+    /**
+     * Get names of <b>compiler</b> input files.
+     */
+    List<Path> getScratchFileNames();
 }
