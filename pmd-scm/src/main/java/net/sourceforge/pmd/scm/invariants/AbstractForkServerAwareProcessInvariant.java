@@ -63,6 +63,15 @@ public abstract class AbstractForkServerAwareProcessInvariant extends AbstractEx
     private final static String PRELOAD_VAR = "LD_PRELOAD";
 
     /**
+     * Environment variable name: when set to non-empty value, instructs
+     * the dynamic linker to resolve all symbols at startup.
+     *
+     * Just like in AFL, used to perform as much work in the fork parent
+     * as possible and not re-do this in every child.
+     */
+    private final static String BIND_NOW_VAR = "LD_BIND_NOW";
+
+    /**
      * Environment variable name: timeout (in seconds) for forkserver child.
      */
     private final static String SCM_TIMEOUT_VAR = "__SCM_TIMEOUT";
@@ -87,11 +96,6 @@ public abstract class AbstractForkServerAwareProcessInvariant extends AbstractEx
      * Marker for the initial forkserver reply.
      */
     private final static String FORKSERVER_INIT_REPLY = "INIT";
-
-    /**
-     * The size of buffer for a single output line read by this class.
-     */
-    private final static int MAX_LINE_LENGTH = 65536;
 
     protected abstract static class AbstractConfigurationWithForkServer extends AbstractConfiguration {
         @Parameter(names = "--forkserver", description = "Use forkserver (Linux-only)")
@@ -224,6 +228,7 @@ public abstract class AbstractForkServerAwareProcessInvariant extends AbstractEx
             pb.command("/bin/sh", "-c", setEnvString + " " + getCompilerCommandLine());
             Map<String, String> environment = pb.environment();
             environment.put(SCM_TIMEOUT_VAR, Integer.toString(timeoutSec));
+            environment.put(BIND_NOW_VAR, "1");
             List<Path> scratchFiles = ops.getScratchFileNames();
             for (int i = 0; i < scratchFiles.size(); ++i) {
                 environment.put(String.format(SCM_INPUT_VAR_FORMAT, i), scratchFiles.get(i).toString());
