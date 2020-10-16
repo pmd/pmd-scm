@@ -15,7 +15,7 @@
     <java.version>8</java.version>
     <maven.compiler.release>${java.version}</maven.compiler.release>
     <pmd.version>6.28.0</pmd.version>
-    <pmd.ui.version>6.19.0</pmd.ui.version>
+    <pmd.ui.version>6.27.0</pmd.ui.version>
   </properties>
 
   <dependencyManagement>
