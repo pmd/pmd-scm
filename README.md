@@ -1,6 +1,6 @@
 # Source code minimizer (pmd-scm)
 
-[![Build Status](https://github.com/pmd/pmd-scm/workflows/build/badge.svg?branch=master)](https://github.com/pmd/pmd-scm/actions?query=workflow%3Abuild)
+[![Build Status](https://github.com/pmd/pmd-scm/workflows/build/badge.svg?branch=main)](https://github.com/pmd/pmd-scm/actions?query=workflow%3Abuild)
 
 This is a tool based on [PMD](https://pmd.github.io). It is intended to minimize one or several source code files, while retaining some invariant (such as a specific compiler error message).
 
